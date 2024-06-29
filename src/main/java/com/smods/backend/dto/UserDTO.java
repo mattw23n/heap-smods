@@ -1,6 +1,5 @@
 package com.smods.backend.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -14,14 +13,19 @@ public class UserDTO {
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 32, message = "Password must be between 8 and 32 characters")
     @Pattern(
-            regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-\\[\\]{};':\"\\\\|,.<>/?]).{8,32}$",
-            message = "Password must contain at least one special character, one alphanumeric character, and be between 8-32 characters"
+            regexp = "^.{8,32}$",
+            message = "Password must be between 8-32 characters"
     )
     private String password;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    private String email;
+    public UserDTO(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    // Default constructor
+    public UserDTO() {
+    }
 
     // Getters and setters
 
@@ -39,13 +43,5 @@ public class UserDTO {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 }

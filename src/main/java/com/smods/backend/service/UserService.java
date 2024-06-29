@@ -2,7 +2,6 @@ package com.smods.backend.service;
 
 import com.smods.backend.dto.LoginRequest;
 import com.smods.backend.dto.UserDTO;
-import com.smods.backend.exception.EmailAlreadyExistsException;
 import com.smods.backend.exception.InvalidCharacterException;
 import com.smods.backend.exception.UsernameAlreadyExistsException;
 import com.smods.backend.model.User;
@@ -21,41 +20,18 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
-
     private static final Pattern NON_ENGLISH_PATTERN = Pattern.compile("[^\\p{ASCII}]");
 
     @Autowired
-    public UserService(UserRepository userRepository, EmailService emailService) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.emailService = emailService;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     // Register a new user
     public User registerUser(UserDTO userDTO) {
         validateInput(userDTO);
-
-        // Check if username already exists
-        if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
-            throw new UsernameAlreadyExistsException("Username already exists: " + userDTO.getUsername());
-        }
-
-        // Check if email already exists
-        if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
-            throw new EmailAlreadyExistsException("Email already exists: " + userDTO.getEmail());
-        }
-
-        User user = new User();
-        user.setUsername(userDTO.getUsername());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        user.setEmail(userDTO.getEmail());
-        user.setRole("USER");
-        user.setVerificationCode(generateVerificationCode());
-
-        // Send verification email
-        emailService.sendVerificationEmail(user);
-
+        User user = new User(userDTO.getUsername(), passwordEncoder.encode(userDTO.getPassword()));
         return userRepository.save(user);
     }
 
@@ -64,27 +40,16 @@ public class UserService {
             throw new InvalidCharacterException("Username contains invalid characters.");
         }
 
-        if (NON_ENGLISH_PATTERN.matcher(userDTO.getEmail()).find()) {
-            throw new InvalidCharacterException("Email contains invalid characters.");
+        if (NON_ENGLISH_PATTERN.matcher(userDTO.getUsername()).find()) {
+            throw new InvalidCharacterException("Username contains invalid characters.");
+        }
+
+        // Check if username already exists
+        if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
+            throw new UsernameAlreadyExistsException("Username already exists: " + userDTO.getUsername());
         }
 
         // You can add more validation rules here as necessary
-    }
-
-    private String generateVerificationCode() {
-        Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // Generates a 6-digit number
-        return String.valueOf(code);
-    }
-
-    // Verify the user's email
-    public void verifyUser(String verificationCode) {
-        User user = userRepository.findByVerificationCode(verificationCode)
-                .orElseThrow(() -> new RuntimeException("Invalid verification code"));
-
-        user.setEmailVerified(true);
-        user.setVerificationCode(null);
-        userRepository.save(user);
     }
 
     // Find a user by username
@@ -93,15 +58,13 @@ public class UserService {
     }
 
     // Login a user
-    public String loginUser(LoginRequest loginRequest) {
-        User user = findByUsername(loginRequest.getUsername());
-        if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return "Invalid username or password";
+    public boolean loginUser(LoginRequest loginRequest) {
+        Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return passwordEncoder.matches(loginRequest.getPassword(), user.getPassword());
         }
-        if (!user.isEmailVerified()) {
-            return "Please verify your email";
-        }
-        return "Login successful";
+        return false;
     }
 
     // Update user details
@@ -110,7 +73,6 @@ public class UserService {
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             user.setUsername(userDTO.getUsername());
-            user.setEmail(userDTO.getEmail());
             if (!userDTO.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
             }
