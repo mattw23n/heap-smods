@@ -5,18 +5,30 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "PLAN_MODULE_GPA")
+@IdClass(PlanModuleGpaKey.class)
 public class PlanModuleGpa {
-    @EmbeddedId
-    private PlanModuleGpaKey id;
+
+    @Id
+    @Column(name = "MID")
+    private String moduleId;
+
+    @Id
+    @Column(name = "PID")
+    private Long planId;
+
+    @Id
+    @Column(name = "UID")
+    private Long userId;
 
     @ManyToOne
-    @MapsId("pid")
-    @JoinColumn(name = "PID")
+    @JoinColumns({
+            @JoinColumn(name = "PID", referencedColumnName = "PID", insertable = false, updatable = false),
+            @JoinColumn(name = "UID", referencedColumnName = "UID", insertable = false, updatable = false)
+    })
     private Plan plan;
 
     @ManyToOne
-    @MapsId("mid")
-    @JoinColumn(name = "MID")
+    @JoinColumn(name = "MID", insertable = false, updatable = false)
     private Module module;
 
     @Column(name = "GPA")
@@ -25,25 +37,29 @@ public class PlanModuleGpa {
     @Column(name = "TERM")
     private String term;
 
-    // Default constructor
-    public PlanModuleGpa() {}
-
-    // Constructor with parameters
-    public PlanModuleGpa(PlanModuleGpaKey id, Plan plan, Module module, Float gpa, String term) {
-        this.id = id;
-        this.plan = plan;
-        this.module = module;
-        this.gpa = gpa;
-        this.term = term;
+    // Getters and setters
+    public String getModuleId() {
+        return moduleId;
     }
 
-    // Getters and Setters
-    public PlanModuleGpaKey getId() {
-        return id;
+    public void setModuleId(String moduleId) {
+        this.moduleId = moduleId;
     }
 
-    public void setId(PlanModuleGpaKey id) {
-        this.id = id;
+    public Long getPlanId() {
+        return planId;
+    }
+
+    public void setPlanId(Long planId) {
+        this.planId = planId;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public Plan getPlan() {

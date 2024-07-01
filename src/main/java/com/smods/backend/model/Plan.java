@@ -1,18 +1,22 @@
 package com.smods.backend.model;
 
-import com.smods.backend.model.composite_key.PlanModulePreassignedGpaKey;
-import com.smods.backend.exception.PlanModificationException;
+import com.smods.backend.model.composite_key.PlanId;
 import jakarta.persistence.*;
 import java.util.*;
 
 @Entity
 @Table(name = "PLAN")
+@IdClass(PlanId.class)
 public class Plan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PID")
     private Long id;
+
+    @Id
+    @Column(name = "UID")
+    private Long userId;
 
     @Column(name = "PNAME")
     private String pname;
@@ -23,8 +27,8 @@ public class Plan {
     @Column(name = "TRACK")
     private String track;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "UID")
+    @ManyToOne
+    @JoinColumn(name = "UID", insertable = false, updatable = false)
     private User user;
 
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL)
@@ -33,12 +37,21 @@ public class Plan {
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL)
     private List<PlanModulePreassignedGpa> planModulePreassignedGPAs;
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getPname() {
